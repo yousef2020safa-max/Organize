@@ -1,5 +1,5 @@
 // Keeps Organize working offline and shows the daily reminder. Bump CACHE when the app shell changes.
-var CACHE = 'organize-v2';
+var CACHE = 'organize-v3';
 // Written by the page on every change: how many tasks are open and which one is on top.
 var STATE_CACHE = 'organize-state';
 var SHELL = [

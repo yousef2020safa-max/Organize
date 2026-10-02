@@ -1,6 +1,6 @@
 # Organize
 
-A to-do list for the iPhone home screen. The top of the screen counts down the days to Jan 1 in giant type, with a bar showing how much of the year is gone. Below that, the task on top sits in a big black card with Done and Later buttons, the headline counts what's left, and anything older than three days turns red. Once it's on your home screen you can turn on the badge, and the icon shows the number of open tasks.
+A dark, green-accented to-do list for the iPhone home screen. The top of the screen counts down the days to Jan 1 in giant type, with a bar showing how much of the year is gone. Below that, the task on top sits in a big black card with Done and Later buttons, the headline counts what's left, and anything older than three days turns red. Once it's on your home screen you can turn on the badge, and the icon shows the number of open tasks.
 
 Tasks are saved on the phone (localStorage). No account, no server.
 
