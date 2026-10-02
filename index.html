@@ -127,6 +127,36 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 }
 .lede { margin: 16px 0 24px; max-width: 30ch; font-size: 19px; line-height: 1.38; letter-spacing: -.01em; }
 
+.daily { margin-bottom: 30px; padding-top: 18px; border-top: 1px solid var(--line-strong); }
+.daily .aside { margin-left: auto; font-size: 11.5px; color: var(--muted); }
+.daily-list { list-style: none; margin: 0; padding: 0; }
+.daily-list > li { border-bottom: 1px solid var(--line); }
+.daily-list > li:last-child { border-bottom: 0; }
+.daily-row {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 56px;
+  padding-block: 6px;
+  text-align: left;
+}
+.prayer-row { min-height: 0; padding-block: 12px; row-gap: 10px; }
+.daily-name { font: 800 22px/1.15 var(--display); letter-spacing: -.02em; }
+.is-done > .daily-name { color: var(--muted); }
+.prayer-count { margin-left: 10px; font: 700 12px/1 var(--display); letter-spacing: .05em; color: var(--green-text); vertical-align: 3px; }
+.prayers { grid-column: 2; display: grid; grid-template-columns: repeat(5, minmax(0, 48px)); gap: 8px; }
+.pbox {
+  display: grid;
+  place-items: center;
+  height: 44px;
+  border: 2px solid var(--box);
+  font: 800 17px/1 var(--display);
+  transition: background-color .15s, border-color .15s;
+}
+.pbox.on { background: var(--green); border-color: var(--green); color: var(--on-green); }
+
 .add { display: flex; margin: 0 0 28px; }
 .add input {
   flex: 1;
@@ -219,9 +249,9 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 }
 .row:last-child { border-bottom: 0; }
 .check { display: grid; place-items: center; width: 44px; height: 44px; margin-left: -9px; }
-.check span { position: relative; display: block; width: 26px; height: 26px; border: 2px solid var(--box); transition: background-color .15s, border-color .15s; }
-.check.on span, .is-done .check span { background: var(--green); border-color: var(--green); }
-.check.on span::after, .is-done .check span::after {
+.check span, .box { position: relative; display: block; width: 26px; height: 26px; border: 2px solid var(--box); transition: background-color .15s, border-color .15s; }
+.check.on span, .is-done .check span, .is-done > .box { background: var(--green); border-color: var(--green); }
+.check.on span::after, .is-done .check span::after, .is-done > .box::after {
   content: "";
   position: absolute;
   left: 7px;
@@ -331,12 +361,35 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     <p class="eyebrow" id="today">Today</p>
     <h1 class="count"><span id="countText">All clear</span><span class="dot" aria-hidden="true"></span></h1>
     <p class="lede" id="lede">Add the first thing you need to get done.</p>
-    <form class="add" id="addForm" autocomplete="off">
-      <label class="sr" for="newTask">New task</label>
-      <input id="newTask" name="newTask" type="text" placeholder="Add a task" maxlength="140" enterkeyhint="done" autocapitalize="sentences">
-      <button class="btn" type="submit">Add</button>
-    </form>
   </section>
+
+  <section class="daily" id="daily" aria-label="Every day">
+    <h3 class="sec-head"><span class="num" id="dailyCount">0/6</span><span>Every day</span><span class="aside">Resets at midnight</span></h3>
+    <ul class="daily-list">
+      <li><button class="daily-row" type="button" data-daily="journal" aria-pressed="false"><span class="box" aria-hidden="true"></span><span class="daily-name">journal</span></button></li>
+      <li><button class="daily-row" type="button" data-daily="workout" aria-pressed="false"><span class="box" aria-hidden="true"></span><span class="daily-name">workout</span></button></li>
+      <li class="daily-row prayer-row" id="prayerRow">
+        <span class="box" aria-hidden="true"></span>
+        <span class="daily-name">prayer<span class="prayer-count" id="prayerCount">0/5</span></span>
+        <span class="prayers">
+          <button class="pbox" type="button" data-prayer="0" aria-label="Fajr" aria-pressed="false">F</button>
+          <button class="pbox" type="button" data-prayer="1" aria-label="Dhuhr" aria-pressed="false">D</button>
+          <button class="pbox" type="button" data-prayer="2" aria-label="Asr" aria-pressed="false">A</button>
+          <button class="pbox" type="button" data-prayer="3" aria-label="Maghrib" aria-pressed="false">M</button>
+          <button class="pbox" type="button" data-prayer="4" aria-label="Isha" aria-pressed="false">I</button>
+        </span>
+      </li>
+      <li><button class="daily-row" type="button" data-daily="that" aria-pressed="false"><span class="box" aria-hidden="true"></span><span class="daily-name">that</span></button></li>
+      <li><button class="daily-row" type="button" data-daily="chronometer" aria-pressed="false"><span class="box" aria-hidden="true"></span><span class="daily-name">chronometer</span></button></li>
+      <li><button class="daily-row" type="button" data-daily="work" aria-pressed="false"><span class="box" aria-hidden="true"></span><span class="daily-name">work</span></button></li>
+    </ul>
+  </section>
+
+  <form class="add" id="addForm" autocomplete="off">
+    <label class="sr" for="newTask">New task</label>
+    <input id="newTask" name="newTask" type="text" placeholder="Add a task" maxlength="140" enterkeyhint="done" autocapitalize="sentences">
+    <button class="btn" type="submit">Add</button>
+  </form>
 
   <section class="next" id="next" aria-live="polite">
     <p class="card-label"><span>01 · Next up</span><span class="age" id="nextAge"></span></p>
@@ -374,7 +427,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
       </ol>
     </div>
     <div id="remindOff" hidden>
-      <p class="setup-copy">Get a reminder at 6 pm every day with what&#39;s left on your list. This also puts the red number on the icon.</p>
+      <p class="setup-copy">Get a reminder at 6 pm Florida time every day with what&#39;s left, daily ones included. This also puts the red number on the icon.</p>
       <button class="btn" type="button" id="remindBtn">Turn on reminders</button>
     </div>
     <div id="remindCode" hidden>
@@ -391,7 +444,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
       </div>
     </div>
     <div id="remindOn" hidden>
-      <p class="setup-copy">Reminders are on for 6 pm every day.</p>
+      <p class="setup-copy">Reminders are on for 6 pm Florida time every day.</p>
       <button class="link" type="button" id="showCode">Show the code again</button>
     </div>
     <p class="setup-copy" id="remindMsg" hidden></p>
@@ -422,9 +475,20 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 <script>
 (function () {
   var KEY = 'organize.v1';
+  var DAILY_KEY = 'organize.daily.v1';
   var DAY = 86400000;
   var $ = function (id) { return document.getElementById(id); };
+  // The every-day items. Prayer is done when all five boxes are checked.
+  var DAILY = [
+    { id: 'journal' },
+    { id: 'workout' },
+    { id: 'prayer', prayers: 5 },
+    { id: 'that' },
+    { id: 'chronometer' },
+    { id: 'work' }
+  ];
   var tasks = load();
+  var daily = loadDaily();
   var undoState = null;
   var toastTimer = null;
 
@@ -433,6 +497,48 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   function dayStart(t) { var d = new Date(t); d.setHours(0, 0, 0, 0); return d.getTime(); }
   function daysOld(t) { return Math.round((dayStart(Date.now()) - dayStart(t)) / DAY); }
   function clean(s) { return String(s).replace(/\s+/g, ' ').trim().slice(0, 140); }
+
+  function todayKey() {
+    var d = new Date();
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+  }
+
+  // A new day starts with every box empty.
+  function loadDaily() {
+    try {
+      var d = JSON.parse(localStorage.getItem(DAILY_KEY));
+      if (d && d.date === todayKey() && d.done && Array.isArray(d.prayer)) return d;
+    } catch (e) {}
+    return { date: todayKey(), done: {}, prayer: [false, false, false, false, false] };
+  }
+
+  function saveDaily() {
+    try { localStorage.setItem(DAILY_KEY, JSON.stringify(daily)); } catch (e) {}
+  }
+
+  function prayerCount() { return daily.prayer.filter(Boolean).length; }
+  function isDailyDone(item) { return item.prayers ? prayerCount() === item.prayers : !!daily.done[item.id]; }
+  function dailyLeft() { return DAILY.filter(function (item) { return !isDailyDone(item); }); }
+
+  function renderDaily() {
+    $('dailyCount').textContent = (DAILY.length - dailyLeft().length) + '/' + DAILY.length;
+    DAILY.forEach(function (item) {
+      var on = isDailyDone(item);
+      if (item.prayers) {
+        $('prayerRow').classList.toggle('is-done', on);
+        $('prayerCount').textContent = prayerCount() + '/' + item.prayers;
+        $('prayerRow').querySelectorAll('[data-prayer]').forEach(function (b) {
+          var p = daily.prayer[Number(b.dataset.prayer)];
+          b.classList.toggle('on', p);
+          b.setAttribute('aria-pressed', String(p));
+        });
+      } else {
+        var btn = document.querySelector('[data-daily="' + item.id + '"]');
+        btn.classList.toggle('is-done', on);
+        btn.setAttribute('aria-pressed', String(on));
+      }
+    });
+  }
 
   function seed() {
     var now = Date.now();
@@ -509,16 +615,19 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
       now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate());
     $('today').textContent = done.length ? stamp + ' · ' + done.length + ' done' : stamp;
     renderCountdown(now);
-    $('countText').textContent = n ? n + ' to do' : (done.length ? 'All done' : 'All clear');
+    renderDaily();
+    var dl = dailyLeft();
+    var total = n + dl.length;
+    $('countText').textContent = total ? total + ' to do' : 'All done';
 
     var lede;
     if (n) {
       var wait = daysOld(open[0].created);
       lede = wait >= 3 ? 'The one on top has waited ' + wait + ' days. Do it now.' : 'Do the one on top before you open anything else.';
-    } else if (done.length) {
-      lede = done.length + ' done today. Add what’s next, or take the win.';
+    } else if (dl.length) {
+      lede = 'The list is clear. ' + (dl.length === 1 ? 'One daily left: ' : dl.length + ' daily left: ') + dl.map(function (d) { return d.id; }).join(', ') + '.';
     } else {
-      lede = 'Add the first thing you need to get done.';
+      lede = 'Everything\u2019s done today. Take the win.';
     }
     $('lede').textContent = lede;
 
@@ -551,17 +660,27 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     $('doneEmpty').hidden = done.length > 0;
     $('clearDone').hidden = !done.length;
 
-    updateBadge(n);
+    updateBadge(total);
     syncState(open);
   }
 
   // The service worker reads this to write the 6 pm reminder from what's on the list.
+  // Writes are queued so a quick run of taps can't land out of order.
+  var syncQueue = Promise.resolve();
   function syncState(open) {
     try {
       if (!('caches' in window)) return;
-      var body = JSON.stringify({ open: open.length, next: open[0] ? open[0].text : '' });
-      caches.open('organize-state').then(function (c) {
-        return c.put('state.json', new Response(body, { headers: { 'Content-Type': 'application/json' } }));
+      var body = JSON.stringify({
+        date: todayKey(),
+        open: open.length,
+        next: open[0] ? open[0].text : '',
+        daily: DAILY.map(function (d) { return { id: d.id, done: isDailyDone(d) }; }),
+        prayer: prayerCount()
+      });
+      syncQueue = syncQueue.then(function () {
+        return caches.open('organize-state').then(function (c) {
+          return c.put('state.json', new Response(body, { headers: { 'Content-Type': 'application/json' } }));
+        });
       }).catch(function () {});
     } catch (e) {}
   }
@@ -618,7 +737,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 
   function leftMsg() {
     var n = openTasks().length;
-    return n ? n + ' left' : 'All done';
+    return n ? n + ' on the list' : 'List clear';
   }
 
   function complete(id) {
@@ -691,6 +810,25 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
       }
     }, { once: true });
   }
+
+  $('daily').addEventListener('click', function (e) {
+    var p = e.target.closest('[data-prayer]');
+    var row = e.target.closest('[data-daily]');
+    if (!p && !row) return;
+    if (daily.date !== todayKey()) daily = loadDaily();
+    var turnedOn;
+    if (p) {
+      var i = Number(p.dataset.prayer);
+      daily.prayer[i] = turnedOn = !daily.prayer[i];
+    } else {
+      daily.done[row.dataset.daily] = turnedOn = !daily.done[row.dataset.daily];
+    }
+    saveDaily();
+    render();
+    if (!turnedOn) return;
+    if (!dailyLeft().length) showToast('Every daily one is done.', false);
+    else if (p && prayerCount() === 5) showToast('All five prayers done.', false);
+  });
 
   $('addForm').addEventListener('submit', function (e) {
     e.preventDefault();
@@ -868,11 +1006,16 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     if (repo) $('secretLink').href = 'https://github.com/' + host.split('.')[0] + '/' + repo + '/settings/secrets/actions/new';
   })();
 
-  function refresh() { purge(); render(); renderSetup(); }
+  function refresh() { purge(); daily = loadDaily(); render(); renderSetup(); }
 
   document.addEventListener('visibilitychange', function () { if (!document.hidden) refresh(); });
   window.addEventListener('pageshow', refresh);
-  window.addEventListener('storage', function (e) { if (e.key === KEY) { tasks = load(); render(); } });
+  window.addEventListener('storage', function (e) {
+    if (e.key === KEY) tasks = load();
+    else if (e.key === DAILY_KEY) daily = loadDaily();
+    else return;
+    render();
+  });
 
   refresh();
 

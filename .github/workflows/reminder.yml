@@ -2,7 +2,7 @@ name: Daily reminder
 
 on:
   schedule:
-    # Every hour at :03. The check step only lets the 6 pm run (in the phone's time zone) through.
+    # Every hour at :03. The check step only lets the 6 pm Florida (Eastern) run through.
     - cron: '3 * * * *'
   # Run workflow sends one right away, whatever the time. Handy for testing.
   workflow_dispatch:
@@ -19,6 +19,7 @@ jobs:
     timeout-minutes: 5
     env:
       REMIND_HOUR: '18'
+      REMIND_TZ: America/New_York # Florida, Eastern time. Daylight saving is handled.
     steps:
       - uses: actions/checkout@v5
 

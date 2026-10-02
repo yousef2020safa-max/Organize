@@ -1,5 +1,5 @@
 // Runs every hour from the Daily reminder workflow. Decides whether this run sends the reminder
-// (it's REMIND_HOUR in the phone's time zone, or someone pressed Run workflow) and whether the
+// (it's REMIND_HOUR in REMIND_TZ, or someone pressed Run workflow) and whether the
 // schedule needs a keepalive commit so GitHub doesn't pause it after 60 quiet days.
 const fs = require('fs');
 const { execSync } = require('child_process');
@@ -45,9 +45,11 @@ function main() {
     return;
   }
 
-  const hour = localHour(new Date(), code.tz);
+  // REMIND_TZ wins; without it, use the time zone the phone reported.
+  const tz = process.env.REMIND_TZ || code.tz || 'UTC';
+  const hour = localHour(new Date(), tz);
   const send = force || hour === remindHour;
-  console.log(`It's ${hour}:xx in ${code.tz || 'UTC'} and the reminder goes out at ${remindHour}:xx. ${send ? 'Sending.' : 'Not sending.'}`);
+  console.log(`It's ${hour}:xx in ${tz} and the reminder goes out at ${remindHour}:xx. ${send ? 'Sending.' : 'Not sending.'}`);
   out('send', send);
 }
 

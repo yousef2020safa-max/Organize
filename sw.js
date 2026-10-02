@@ -1,5 +1,5 @@
 // Keeps Organize working offline and shows the daily reminder. Bump CACHE when the app shell changes.
-var CACHE = 'organize-v3';
+var CACHE = 'organize-v4';
 // Written by the page on every change: how many tasks are open and which one is on top.
 var STATE_CACHE = 'organize-state';
 var SHELL = [
@@ -53,6 +53,11 @@ self.addEventListener('fetch', function (e) {
   );
 });
 
+function todayKey() {
+  var d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
 function daysToJan1() {
   var now = new Date();
   var today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
@@ -72,15 +77,27 @@ function buildReminder(event) {
     .then(function (res) { return res ? res.json() : null; })
     .then(function (state) {
       if (!state) return fallback;
+      // If the app hasn't been opened today, yesterday's checks don't count.
+      var fresh = state.date === todayKey();
+      var prayers = fresh ? (state.prayer || 0) : 0;
+      var dailyLeft = (state.daily || [])
+        .filter(function (d) { return !fresh || !d.done; })
+        .map(function (d) { return d.id === 'prayer' ? 'prayer (' + prayers + '/5)' : d.id; });
+      var open = state.open || 0;
+      var total = open + dailyLeft.length;
       var days = daysToJan1();
       var countdown = days + (days === 1 ? ' day' : ' days') + ' left until Jan 1.';
       try {
         if (self.navigator.setAppBadge) {
-          if (state.open) self.navigator.setAppBadge(state.open); else self.navigator.clearAppBadge();
+          if (total) self.navigator.setAppBadge(total); else self.navigator.clearAppBadge();
         }
       } catch (err) {}
-      if (!state.open) return { title: 'Your list is clear', body: 'Add what\u2019s next for tomorrow. ' + countdown };
-      return { title: 'Don\u2019t forget: ' + state.open + ' to do', body: 'Next up: ' + state.next + '. ' + countdown };
+      if (!total) return { title: 'All done today', body: 'Nothing left. ' + countdown };
+      var parts = [];
+      if (dailyLeft.length) parts.push('Left today: ' + dailyLeft.join(', ') + '.');
+      if (open) parts.push('Next up: ' + state.next + '.');
+      parts.push(countdown);
+      return { title: 'Don\u2019t forget: ' + total + ' to do', body: parts.join(' ') };
     })
     .catch(function () { return fallback; });
 }
