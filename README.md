@@ -2,7 +2,7 @@
 
 A dark, green-accented to-do list for the iPhone home screen. The top of the screen counts down the days to Jan 1 in giant type, with a bar showing how much of the year is gone. Below that, the task on top sits in a big black card with Done and Later buttons, the headline counts what's left, and anything older than three days turns red. Once it's on your home screen you can turn on the badge, and the icon shows the number of open tasks.
 
-Under the countdown is an "every day" checklist that empties at midnight: journal, workout, prayer (five boxes, F D A M I for Fajr, Dhuhr, Asr, Maghrib and Isha), that, chronometer and work. The headline count and the icon badge include whatever's left of it.
+Under the countdown is an "every day" checklist that empties at midnight: prayer (five boxes, F D A M I for Fajr, Dhuhr, Asr, Maghrib and Isha), journal, workout, that, chronometer and work. The headline count and the icon badge include whatever's left of it.
 
 Tasks are saved on the phone (localStorage). No account, no server.
 

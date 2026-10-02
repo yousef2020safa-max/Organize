@@ -366,8 +366,6 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   <section class="daily" id="daily" aria-label="Every day">
     <h3 class="sec-head"><span class="num" id="dailyCount">0/6</span><span>Every day</span><span class="aside">Resets at midnight</span></h3>
     <ul class="daily-list">
-      <li><button class="daily-row" type="button" data-daily="journal" aria-pressed="false"><span class="box" aria-hidden="true"></span><span class="daily-name">journal</span></button></li>
-      <li><button class="daily-row" type="button" data-daily="workout" aria-pressed="false"><span class="box" aria-hidden="true"></span><span class="daily-name">workout</span></button></li>
       <li class="daily-row prayer-row" id="prayerRow">
         <span class="box" aria-hidden="true"></span>
         <span class="daily-name">prayer<span class="prayer-count" id="prayerCount">0/5</span></span>
@@ -379,6 +377,8 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
           <button class="pbox" type="button" data-prayer="4" aria-label="Isha" aria-pressed="false">I</button>
         </span>
       </li>
+      <li><button class="daily-row" type="button" data-daily="journal" aria-pressed="false"><span class="box" aria-hidden="true"></span><span class="daily-name">journal</span></button></li>
+      <li><button class="daily-row" type="button" data-daily="workout" aria-pressed="false"><span class="box" aria-hidden="true"></span><span class="daily-name">workout</span></button></li>
       <li><button class="daily-row" type="button" data-daily="that" aria-pressed="false"><span class="box" aria-hidden="true"></span><span class="daily-name">that</span></button></li>
       <li><button class="daily-row" type="button" data-daily="chronometer" aria-pressed="false"><span class="box" aria-hidden="true"></span><span class="daily-name">chronometer</span></button></li>
       <li><button class="daily-row" type="button" data-daily="work" aria-pressed="false"><span class="box" aria-hidden="true"></span><span class="daily-name">work</span></button></li>
@@ -480,9 +480,9 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   var $ = function (id) { return document.getElementById(id); };
   // The every-day items. Prayer is done when all five boxes are checked.
   var DAILY = [
+    { id: 'prayer', prayers: 5 },
     { id: 'journal' },
     { id: 'workout' },
-    { id: 'prayer', prayers: 5 },
     { id: 'that' },
     { id: 'chronometer' },
     { id: 'work' }
