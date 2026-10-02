@@ -417,15 +417,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   </section>
 
   <section class="sec" id="setup" hidden>
-    <h3 class="sec-head"><span class="num"><svg class="star" aria-hidden="true"><use href="#star"></use></svg></span><span id="setupTitle">Home screen</span></h3>
-    <div id="installSteps" hidden>
-      <ol class="steps">
-        <li>Open this page in Safari and tap the Share button.</li>
-        <li>Tap Add to Home Screen, then Add.</li>
-        <li>Open Organize from the new icon. Your list lives in that app, so add tasks there.</li>
-        <li>Scroll down to here in the app to turn on the 6 pm reminder.</li>
-      </ol>
-    </div>
+    <h3 class="sec-head"><span class="num"><svg class="star" aria-hidden="true"><use href="#star"></use></svg></span><span>Reminders</span></h3>
     <div id="remindOff" hidden>
       <p class="setup-copy">Get a reminder at 6 pm Florida time every day with what&#39;s left, daily ones included. This also puts the red number on the icon.</p>
       <button class="btn" type="button" id="remindBtn">Turn on reminders</button>
@@ -624,12 +616,11 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     if (n) {
       var wait = daysOld(open[0].created);
       lede = wait >= 3 ? 'The one on top has waited ' + wait + ' days. Do it now.' : 'Do the one on top before you open anything else.';
-    } else if (dl.length) {
-      lede = 'The list is clear. ' + (dl.length === 1 ? 'One daily left: ' : dl.length + ' daily left: ') + dl.map(function (d) { return d.id; }).join(', ') + '.';
-    } else {
+    } else if (!dl.length) {
       lede = 'Everything\u2019s done today. Take the win.';
     }
-    $('lede').textContent = lede;
+    $('lede').textContent = lede || '';
+    $('lede').hidden = !lede;
 
     var card = $('next');
     var top = open[0];
@@ -901,13 +892,11 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     var push = loadPush();
     var msg = setupError;
     var mode = 'off';
-    if (!installed) mode = 'install';
-    else if (!canPush) { mode = 'msg'; msg = 'This iPhone can\u2019t get reminders from a web app. Update to iOS 16.4 or later.'; }
+    $('setup').hidden = !installed;
+    if (!installed) return;
+    if (!canPush) { mode = 'msg'; msg = 'This iPhone can\u2019t get reminders from a web app. Update to iOS 16.4 or later.'; }
     else if (Notification.permission === 'denied') { mode = 'msg'; msg = 'Notifications are off for Organize. To get reminders and the badge, go to Settings, then Notifications, then Organize, and allow them.'; }
     else if (Notification.permission === 'granted' && push && push.code) mode = push.done ? 'on' : 'code';
-    $('setup').hidden = false;
-    $('setupTitle').textContent = installed ? 'Reminders' : 'Home screen';
-    $('installSteps').hidden = mode !== 'install';
     $('remindOff').hidden = mode !== 'off';
     $('remindCode').hidden = mode !== 'code';
     $('remindOn').hidden = mode !== 'on';
