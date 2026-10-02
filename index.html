@@ -274,6 +274,21 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 .steps li { counter-increment: step; display: grid; grid-template-columns: 2.4ch minmax(0, 1fr); gap: 12px; font-size: 17px; }
 .steps li::before { content: counter(step, decimal-leading-zero); font: 500 13px/1.9 var(--mono); color: var(--accent); }
 .setup-copy { margin: 10px 0 16px; max-width: 34ch; }
+.steps a { color: var(--accent); text-decoration-thickness: 1.5px; text-underline-offset: 3px; }
+.code {
+  max-height: 7.8em;
+  margin: 18px 0 12px;
+  padding: 12px;
+  overflow: auto;
+  border: 1.5px solid var(--ink);
+  font: 400 12px/1.5 var(--mono);
+  word-break: break-all;
+  -webkit-user-select: all;
+  user-select: all;
+}
+.setup-btns { display: flex; flex-wrap: wrap; gap: 10px; }
+.btn-line { background: transparent; color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--ink); }
+.btn:disabled { opacity: .5; cursor: default; }
 
 .foot { margin: 0; font-size: 12px; letter-spacing: .12em; color: var(--muted); }
 
@@ -365,19 +380,37 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   </section>
 
   <section class="sec" id="setup" hidden>
-    <h3 class="sec-head"><span class="num">→</span><span>Home screen</span></h3>
+    <h3 class="sec-head"><span class="num">→</span><span id="setupTitle">Home screen</span></h3>
     <div id="installSteps" hidden>
       <ol class="steps">
         <li>Open this page in Safari and tap the Share button.</li>
         <li>Tap Add to Home Screen, then Add.</li>
         <li>Open Organize from the new icon. Your list lives in that app, so add tasks there.</li>
+        <li>Scroll down to here in the app to turn on the 6 pm reminder.</li>
       </ol>
     </div>
-    <div id="badgeSetup" hidden>
-      <p class="setup-copy">Turn on the badge and the icon shows how many tasks are left as a red number.</p>
-      <button class="btn" type="button" id="badgeBtn">Turn on the badge</button>
+    <div id="remindOff" hidden>
+      <p class="setup-copy">Get a reminder at 6 pm every day with what&#39;s left on your list. This also puts the red number on the icon.</p>
+      <button class="btn" type="button" id="remindBtn">Turn on reminders</button>
     </div>
-    <p class="setup-copy" id="badgeBlocked" hidden>The badge is off. To turn it on, go to Settings, then Notifications, then Organize, and allow notifications.</p>
+    <div id="remindCode" hidden>
+      <p class="setup-copy">One last step. GitHub sends the reminder, so it needs this code once.</p>
+      <ol class="steps">
+        <li>Tap Copy code.</li>
+        <li><span>Open <a id="secretLink" href="https://github.com/yousef2020safa-max/Organize/settings/secrets/actions/new" target="_blank" rel="noopener">the new secret page</a> on GitHub. Name it ORGANIZE_PUSH, paste the code under Secret and tap Add secret.</span></li>
+        <li>Come back here and tap Done.</li>
+      </ol>
+      <p class="code" id="codeBox" aria-label="Reminder code"></p>
+      <div class="setup-btns">
+        <button class="btn" type="button" id="copyBtn">Copy code</button>
+        <button class="btn btn-line" type="button" id="codeDone">Done</button>
+      </div>
+    </div>
+    <div id="remindOn" hidden>
+      <p class="setup-copy">Reminders are on for 6 pm every day.</p>
+      <button class="link" type="button" id="showCode">Show the code again</button>
+    </div>
+    <p class="setup-copy" id="remindMsg" hidden></p>
   </section>
 
   <p class="foot">Saved on this phone. No account.</p>
@@ -535,6 +568,18 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     $('clearDone').hidden = !done.length;
 
     updateBadge(n);
+    syncState(open);
+  }
+
+  // The service worker reads this to write the 6 pm reminder from what's on the list.
+  function syncState(open) {
+    try {
+      if (!('caches' in window)) return;
+      var body = JSON.stringify({ open: open.length, next: open[0] ? open[0].text : '' });
+      caches.open('organize-state').then(function (c) {
+        return c.put('state.json', new Response(body, { headers: { 'Content-Type': 'application/json' } }));
+      }).catch(function () {});
+    } catch (e) {}
   }
 
   // Counts down to the next Jan 1 and rolls over to the following year on Jan 1.
@@ -575,11 +620,12 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   function commit(msg) {
     save();
     render();
-    if (msg) showToast(msg);
+    if (msg) showToast(msg, true);
   }
 
-  function showToast(msg) {
+  function showToast(msg, undoable) {
     $('toastMsg').textContent = msg;
+    $('toastUndo').hidden = !undoable;
     $('toast').hidden = false;
     clearTimeout(toastTimer);
     toastTimer = setTimeout(hideToast, 5000);
@@ -678,7 +724,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
   $('nextDone').addEventListener('click', function () { complete($('next').dataset.id); });
   $('nextLater').addEventListener('click', function () {
     if (openTasks().length > 1) move($('next').dataset.id, false);
-    else showToast('It\u2019s the only one. Do it.');
+    else showToast('It\u2019s the only one. Do it.', false);
   });
   $('nextDelete').addEventListener('click', function () { remove($('next').dataset.id); });
   $('nextTitle').addEventListener('click', function () { startEdit(this); });
@@ -721,25 +767,122 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
     return navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
   }
 
+  var PUSH_KEY = 'organize.push';
+  var setupError = '';
+
+  function loadPush() { try { return JSON.parse(localStorage.getItem(PUSH_KEY)) || null; } catch (e) { return null; } }
+  function savePush(p) { try { localStorage.setItem(PUSH_KEY, JSON.stringify(p)); } catch (e) {} }
+
   function renderSetup() {
-    var canBadge = 'setAppBadge' in navigator && 'Notification' in window;
-    var mode = 'none';
-    if (!isInstalled()) mode = 'install';
-    else if (canBadge && Notification.permission === 'default') mode = 'badge';
-    else if (canBadge && Notification.permission === 'denied') mode = 'blocked';
-    $('setup').hidden = mode === 'none';
+    var installed = isInstalled();
+    var canPush = 'PushManager' in window && 'Notification' in window && 'serviceWorker' in navigator;
+    var push = loadPush();
+    var msg = setupError;
+    var mode = 'off';
+    if (!installed) mode = 'install';
+    else if (!canPush) { mode = 'msg'; msg = 'This iPhone can\u2019t get reminders from a web app. Update to iOS 16.4 or later.'; }
+    else if (Notification.permission === 'denied') { mode = 'msg'; msg = 'Notifications are off for Organize. To get reminders and the badge, go to Settings, then Notifications, then Organize, and allow them.'; }
+    else if (Notification.permission === 'granted' && push && push.code) mode = push.done ? 'on' : 'code';
+    $('setup').hidden = false;
+    $('setupTitle').textContent = installed ? 'Reminders' : 'Home screen';
     $('installSteps').hidden = mode !== 'install';
-    $('badgeSetup').hidden = mode !== 'badge';
-    $('badgeBlocked').hidden = mode !== 'blocked';
+    $('remindOff').hidden = mode !== 'off';
+    $('remindCode').hidden = mode !== 'code';
+    $('remindOn').hidden = mode !== 'on';
+    $('remindMsg').textContent = msg;
+    $('remindMsg').hidden = !msg;
+    if (mode === 'code') $('codeBox').textContent = push.code;
   }
 
-  $('badgeBtn').addEventListener('click', function () {
-    var done = function () { renderSetup(); render(); };
-    try {
-      var p = Notification.requestPermission(done);
-      if (p && p.then) p.then(done, done);
-    } catch (e) { done(); }
+  function b64urlToBytes(str) {
+    var b = str.replace(/-/g, '+').replace(/_/g, '/');
+    while (b.length % 4) b += '=';
+    var bin = atob(b);
+    var out = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+
+  function bytesToB64url(bytes) {
+    var bin = '';
+    for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+    return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+
+  // The phone makes its own push key pair. The private half only ever goes into the GitHub secret.
+  async function makeKeys() {
+    var pair = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify']);
+    var jwk = await crypto.subtle.exportKey('jwk', pair.privateKey);
+    var pub = new Uint8Array(65);
+    pub[0] = 4;
+    pub.set(b64urlToBytes(jwk.x), 1);
+    pub.set(b64urlToBytes(jwk.y), 33);
+    return { pub: bytesToB64url(pub), priv: jwk.d };
+  }
+
+  // Asks for permission, subscribes this phone to push, and builds the code for the GitHub secret.
+  async function setUpReminders() {
+    var perm = await Notification.requestPermission();
+    render();
+    if (perm !== 'granted') return;
+    var reg = await navigator.serviceWorker.ready;
+    var push = loadPush();
+    var sub = await reg.pushManager.getSubscription();
+    if (!push || !push.priv) {
+      if (sub) { await sub.unsubscribe(); sub = null; }
+      push = await makeKeys();
+    }
+    if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64urlToBytes(push.pub) });
+    var tz = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+    push.code = btoa(JSON.stringify({ v: 1, sub: sub.toJSON(), pub: push.pub, priv: push.priv, tz: tz }));
+    push.done = false;
+    savePush(push);
+  }
+
+  function runSetup(btn) {
+    btn.disabled = true;
+    setupError = '';
+    setUpReminders().catch(function (err) {
+      setupError = 'Reminders didn\u2019t turn on (' + ((err && err.message) || err) + '). Close Organize, open it again and try once more.';
+    }).then(function () {
+      btn.disabled = false;
+      renderSetup();
+    });
+  }
+
+  $('remindBtn').addEventListener('click', function () { runSetup(this); });
+  $('showCode').addEventListener('click', function () { runSetup(this); });
+
+  $('copyBtn').addEventListener('click', function () {
+    var box = $('codeBox');
+    function selectIt() {
+      var range = document.createRange();
+      range.selectNodeContents(box);
+      var sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+      showToast('Code selected. Tap Copy.');
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(box.textContent).then(function () { showToast('Code copied.'); }, selectIt);
+    } else {
+      selectIt();
+    }
   });
+
+  $('codeDone').addEventListener('click', function () {
+    var push = loadPush();
+    if (push) { push.done = true; savePush(push); }
+    renderSetup();
+    showToast('Reminders on for 6 pm.');
+  });
+
+  (function pointSecretLink() {
+    var host = location.hostname;
+    if (!/\.github\.io$/.test(host)) return;
+    var repo = location.pathname.split('/')[1];
+    if (repo) $('secretLink').href = 'https://github.com/' + host.split('.')[0] + '/' + repo + '/settings/secrets/actions/new';
+  })();
 
   function refresh() { purge(); render(); renderSetup(); }
 
@@ -749,7 +892,7 @@ button { font: inherit; color: inherit; background: none; border: 0; padding: 0;
 
   refresh();
 
-  if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
     navigator.serviceWorker.register('sw.js').catch(function () {});
   }
 })();

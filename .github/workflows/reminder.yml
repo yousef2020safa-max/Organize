@@ -1,0 +1,51 @@
+name: Daily reminder
+
+on:
+  schedule:
+    # Every hour at :03. The check step only lets the 6 pm run (in the phone's time zone) through.
+    - cron: '3 * * * *'
+  # Run workflow sends one right away, whatever the time. Handy for testing.
+  workflow_dispatch:
+
+permissions:
+  contents: write # for the keepalive commit
+
+concurrency:
+  group: daily-reminder
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      REMIND_HOUR: '18'
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Check the time
+        id: check
+        run: node .github/reminder/check.js
+        env:
+          ORGANIZE_PUSH: ${{ secrets.ORGANIZE_PUSH }}
+          FORCE: ${{ github.event_name == 'workflow_dispatch' }}
+
+      - name: Install web-push
+        if: steps.check.outputs.send == 'true'
+        run: npm install --no-save --no-package-lock --no-audit --no-fund web-push@3.6.7
+
+      - name: Send the reminder
+        if: steps.check.outputs.send == 'true'
+        run: node .github/reminder/send.js
+        env:
+          ORGANIZE_PUSH: ${{ secrets.ORGANIZE_PUSH }}
+
+      # GitHub pauses scheduled workflows in public repos after 60 days without commits.
+      - name: Keep the schedule active
+        if: steps.check.outputs.keepalive == 'true'
+        run: |
+          date -u +%F > .github/reminder/keepalive
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .github/reminder/keepalive
+          git commit -m 'Keep the daily reminder schedule active'
+          git push

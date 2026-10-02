@@ -13,10 +13,21 @@ Tasks are saved on the phone (localStorage). No account, no server.
 
 Add tasks from the home screen app, not from Safari. iOS keeps the two separate.
 
+## The 6 pm reminder
+
+Every evening at 6 you get a notification like "Don't forget: 3 to do. Next up: Finish the bio lab report draft. 91 days left until Jan 1." GitHub only sends the ping. The phone writes the words from your list, so your tasks never leave it.
+
+1. In the home screen app, scroll down to Reminders and tap Turn on reminders. Allow notifications.
+2. Tap Copy code, then open the link in step 2. Name the secret `ORGANIZE_PUSH`, paste the code and tap Add secret.
+3. To test it, open the Actions tab, pick Daily reminder and tap Run workflow. It sends one right away.
+
+The workflow (`.github/workflows/reminder.yml`) runs from `main` once an hour and only sends during the hour set in `REMIND_HOUR` (24-hour clock, in your phone's time zone). Change that number to move the reminder. The workflow also makes a small commit every 45 days or so, because GitHub pauses scheduled jobs in public repos after 60 days without commits.
+
 ## Files
 
 - `index.html` is the whole app: markup, styles and script.
-- `sw.js` caches the app so it opens offline.
+- `sw.js` caches the app so it opens offline and shows the reminder when the push arrives.
+- `.github/reminder/` has the scripts the workflow runs.
 - `manifest.webmanifest` and `icons/` give it its name and icon on the home screen.
 
 The app checks for a new version every time it opens with a connection, so pushed changes show up on the phone without reinstalling.
